@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 from sklearn.cross_validation import StratifiedShuffleSplit
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.metrics import classification_report
 
@@ -24,7 +24,7 @@ def run(args):
     print(classification_report(y_validation, y_pred))
 
 def split(data, test_size):
-    X = TfidfVectorizer(analyzer='char').fit_transform(np.array([d[0] for d in data]))
+    X = TfidfVectorizer(analyzer='char', ngram_range=(2,3)).fit_transform(np.array([d[0] for d in data]))
     y = np.array([d[1] for d in data])
 
     sss = StratifiedShuffleSplit(y, test_size=test_size, random_state=0)

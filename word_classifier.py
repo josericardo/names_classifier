@@ -12,26 +12,16 @@ import os
 from sklearn.cross_validation import StratifiedShuffleSplit
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
-from sklearn.metrics import classification_report
+from sklearn import cross_validation
 
 def run(args):
-    X_train, y_train, X_validation, y_validation = split(read_dataset('train'), test_size=0.3)
+    X_train, y_train = read_dataset('train')
     clf = BernoulliNB()
 
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_validation)
+    scores = cross_validation.cross_val_score(clf, X_train, y_train, cv=10,
+                                              n_jobs=4, scoring='f1', verbose=1)
 
-    print(classification_report(y_validation, y_pred))
-
-def split(data, test_size):
-    X = TfidfVectorizer(analyzer='char', ngram_range=(2,3)).fit_transform(np.array([d[0] for d in data]))
-    y = np.array([d[1] for d in data])
-
-    sss = StratifiedShuffleSplit(y, test_size=test_size, random_state=0)
-
-    for train_index, test_index in sss:
-        return (X[train_index], y[train_index],
-                X[test_index], y[test_index])
+    print("F1-Score: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
 def read_dataset(basedir):
     names = [(word, 1) for word in read_words(os.path.join(basedir, 'names.txt'))]
@@ -43,7 +33,10 @@ def read_dataset(basedir):
     print("%d data points were read." % len(data))
     print("%d names and %d not-names" % (len(names), len(wikipedia)))
 
-    return data
+    X = TfidfVectorizer(analyzer='char', ngram_range=(2,3)).fit_transform(np.array([d[0] for d in data]))
+    y = np.array([d[1] for d in data])
+
+    return X, y
 
 def read_words(file_path):
     with open(file_path) as f:

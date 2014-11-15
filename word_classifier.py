@@ -7,8 +7,7 @@
 import argparse
 import random
 import numpy as np
-
-from bz2 import BZ2File
+import os
 
 from sklearn.cross_validation import StratifiedShuffleSplit
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -16,13 +15,13 @@ from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.metrics import classification_report
 
 def run(args):
-    X_train, y_train, X_test, y_test = split(read_dataset(), test_size=0.99)
+    X_train, y_train, X_validation, y_validation = split(read_dataset('train'), test_size=0.3)
     clf = BernoulliNB()
 
-    clf.fit(X_train[:-200], y_train[:-200])
-    y_pred = clf.predict(X_train[-200:])
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_validation)
 
-    print(classification_report(y_train[-200:], y_pred))
+    print(classification_report(y_validation, y_pred))
 
 def split(data, test_size):
     X = TfidfVectorizer(analyzer='char').fit_transform(np.array([d[0] for d in data]))
@@ -34,9 +33,9 @@ def split(data, test_size):
         return (X[train_index], y[train_index],
                 X[test_index], y[test_index])
 
-def read_dataset():
-    names = [(word, 1) for word in read_words('names.txt.bz2')]
-    wikipedia = [(word, 0) for word in read_words('wikipedia-clean.txt.bz2')]
+def read_dataset(basedir):
+    names = [(word, 1) for word in read_words(os.path.join(basedir, 'names.txt'))]
+    wikipedia = [(word, 0) for word in read_words(os.path.join(basedir, 'words.txt'))]
 
     data = names + wikipedia
     random.shuffle(data)
@@ -47,7 +46,7 @@ def read_dataset():
     return data
 
 def read_words(file_path):
-    with BZ2File(file_path) as f:
+    with open(file_path) as f:
         return f.read().split('\n')
 
 def parse_args():
